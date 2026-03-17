@@ -1,0 +1,235 @@
+/* ── CSS Variables ── */
+:root {
+  --blue:   #00aaff;
+  --red:    #ff2244;
+  --amber:  #ffaa00;
+  --gold:   #ffd700;
+  --dim:    rgba(255,255,255,0.22);
+  --bg:     rgba(4, 8, 16, 0.85);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  overflow: hidden;
+  background: #000;
+  font-family: 'Share Tech Mono', monospace;
+  color: #fff;
+}
+
+/* ── Canvas ── */
+canvas#c {
+  position: fixed;
+  top: 0; left: 0;
+  display: block;
+  width: 100vw; height: 100vh;
+}
+
+/* ── Alarm VFX overlay ── */
+#alarm-vfx {
+  position: fixed; inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background: rgba(255,0,0,0);
+  transition: background 0.06s;
+}
+
+/* ── INTRO SCREEN ── */
+#intro {
+  position: fixed; inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.93);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px;
+  transition: opacity 0.6s;
+}
+#intro h1 {
+  color: var(--blue);
+  font-size: 30px;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.4;
+}
+#intro .sub {
+  color: rgba(0,170,255,0.3);
+  font-size: 10px;
+  letter-spacing: 5px;
+}
+#intro p {
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  line-height: 2.3;
+  text-align: center;
+  max-width: 460px;
+  letter-spacing: 1px;
+}
+#intro p strong { color: var(--red); }
+#intro .kbd {
+  display: inline-block;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+#enter-btn {
+  padding: 13px 40px;
+  background: transparent;
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+#enter-btn:hover {
+  background: rgba(0,170,255,0.1);
+  color: #fff;
+}
+
+/* ── HUD ── */
+#hud {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Progress bar */
+#progress-bar {
+  position: fixed; top: 0; left: 0;
+  height: 2px; width: 0%;
+  background: var(--blue);
+  transition: width 0.5s, background 0.4s;
+  z-index: 51;
+}
+
+/* Crosshair */
+#crosshair {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px; height: 20px;
+  z-index: 52;
+}
+#crosshair::before {
+  content: ''; position: absolute;
+  width: 100%; height: 1px;
+  top: 50%; transform: translateY(-50%);
+  background: rgba(255,255,255,0.6);
+}
+#crosshair::after {
+  content: ''; position: absolute;
+  height: 100%; width: 1px;
+  left: 50%; transform: translateX(-50%);
+  background: rgba(255,255,255,0.6);
+}
+
+/* Stage panel */
+#stage-panel {
+  position: fixed; top: 18px; left: 18px;
+  max-width: 290px;
+  background: var(--bg);
+  border-left: 3px solid var(--stage-color, var(--blue));
+  padding: 13px 16px;
+  border-radius: 0 4px 4px 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#stage-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--dim);
+}
+#stage-name {
+  font-size: 14px;
+  color: var(--stage-color, var(--blue));
+  transition: color 0.4s;
+  margin-bottom: 7px;
+}
+#stage-desc {
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.38);
+  line-height: 1.9;
+}
+
+/* Registers */
+#registers {
+  position: fixed; top: 18px; right: 18px;
+  background: var(--bg);
+  border: 1px solid rgba(0,170,255,0.15);
+  padding: 11px 15px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 2.1;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#r-pc  { color: var(--blue); }
+#r-sp  { color: var(--gold); }
+#r-irq { color: var(--dim); font-size: 11px; }
+
+/* IRQ prompt */
+#irq-prompt {
+  position: fixed; bottom: 62px;
+  left: 50%; transform: translateX(-50%);
+  background: rgba(255,34,68,0.1);
+  border: 1px solid rgba(255,34,68,0.3);
+  padding: 9px 22px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #ff6680;
+  letter-spacing: 2px;
+  animation: pulseBlink 2.4s ease-in-out infinite;
+}
+@keyframes pulseBlink {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1.0; }
+}
+
+/* Hint */
+#hint {
+  position: fixed; bottom: 20px;
+  left: 50%; transform: translateX(-50%);
+  background: rgba(4,8,16,0.75);
+  padding: 9px 18px;
+  border-radius: 20px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 2px;
+  transition: opacity 1.5s;
+}
+
+/* ── LOADING SCREEN ── */
+#loading-screen {
+  position: fixed; inset: 0;
+  z-index: 200;
+  background: #020508;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.loading-title {
+  color: var(--blue);
+  font-size: 14px;
+  letter-spacing: 4px;
+}
+.loading-file {
+  color: rgba(255,255,255,0.3);
+  font-size: 11px;
+  letter-spacing: 2px;
+  height: 18px;
+}
+.loading-bar-track {
+  width: 320px; height: 2px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 2px;
+}
+.loading-bar-fill {
+  height: 100%; width: 0%;
+  background: var(--blue);
+  border-radius: 2px;
+  transition: width 0.2s;
+}

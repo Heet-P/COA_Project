@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CPU INTERRUPT FACTORY</title>
+  <link rel="stylesheet" href="css/hud.css">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="alarm-vfx"></div>
+
+  <!-- LOADING SCREEN -->
+  <div id="loading-screen">
+    <div class="loading-title">LOADING SYSTEMS</div>
+    <div class="loading-file">&nbsp;</div>
+    <div class="loading-bar-track">
+      <div class="loading-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- INTRO SCREEN -->
+  <div id="intro" style="display:none">
+    <h1>CPU INTERRUPT<br>FACTORY</h1>
+    <div class="sub">FPV EDUCATIONAL SIMULATION</div>
+    <p>
+      You are entering a live CPU processing plant.<br>
+      Blue instruction blocks flow through the pipeline.<br>
+      The <strong>Program Counter</strong> ticks with every completed instruction.<br><br>
+      Press <strong>[ X ]</strong> to fire an Interrupt Request signal.<br><br>
+      <span class="kbd">W A S D</span> Move &nbsp;
+      <span class="kbd">Mouse</span> Look &nbsp;
+      <span class="kbd">X</span> Fire IRQ &nbsp;
+      <span class="kbd">ESC</span> Cursor
+    </p>
+    <button id="enter-btn">[ ENTER FACTORY ]</button>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" style="display:none">
+    <div id="progress-bar"></div>
+    <div id="crosshair"></div>
+    <div id="stage-panel">
+      <div id="stage-label">CURRENT OPERATION</div>
+      <div id="stage-name">BASELINE EXECUTION</div>
+      <div id="stage-desc">CPU fetches and executes standard
+        instructions. Watch the Program Counter tick.</div>
+    </div>
+    <div id="registers">
+      <div id="r-pc">PC    0x0041</div>
+      <div id="r-sp">SP    0x1FF0</div>
+      <div id="r-irq">IRQ   IDLE</div>
+    </div>
+    <div id="irq-prompt">[ PRESS X TO SEND INTERRUPT SIGNAL ]</div>
+    <div id="hint">WASD MOVE · MOUSE LOOK · X FIRE IRQ · ESC CURSOR</div>
+  </div>
+
+  <!-- Three.js + loaders from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <!-- Game entry point -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
