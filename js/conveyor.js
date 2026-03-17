@@ -3,6 +3,7 @@
    ────────────────────────────────────────── */
 
 import { flashRegister } from './machine.js';
+import { makeLabel } from './labels.js';
 
 /* ── Constants ── */
 const PLAT_Y     = 0.32;           // platform top
@@ -214,29 +215,7 @@ function createRails(scene) {
   });
 }
 
-/* ── Labels ── */
+/* ── Labels removed for cleaner view ── */
 function createLabels(scene) {
-  const defs = [
-    { txt: '⬅ FETCH',    x: -12.5, z:  0,     col: '#00aaff' },
-    { txt: 'MEMORY ➡',   x:  12.5, z:  0,     col: '#44ff88' },
-    { txt: 'I/O PORT ⬆', x:  0,    z: -12.5,  col: '#ff8844' },
-    { txt: 'CACHE ⬇',    x:  0,    z:  12.5,  col: '#8844ff' },
-  ];
-  defs.forEach(d => {
-    const c = document.createElement('canvas');
-    c.width = 320; c.height = 80;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = d.col;
-    ctx.font = 'bold 32px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(d.txt, 160, 40);
-    const tex = new THREE.CanvasTexture(c);
-    const sp = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: tex })
-    );
-    sp.position.set(d.x, PLAT_Y + 1.8, d.z);
-    sp.scale.set(3.5, 0.9, 1);
-    scene.add(sp);
-  });
+  /* intentionally empty — kept minimal */
 }

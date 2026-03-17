@@ -6,6 +6,7 @@
    ────────────────────────────────────────── */
 
 import { getReadyBlock, removeInputBlock, spawnOutputBlock } from './conveyor.js';
+import { makeLabel } from './labels.js';
 
 /* ── State enum ── */
 const S = { IDLE: 0, GRAB: 1, ROTATE: 2, RELEASE: 3, RETURN: 4 };
@@ -64,6 +65,8 @@ export function initArm(scene, assets) {
 
   armScene.traverse(c => { if (c.isMesh) c.castShadow = true; });
   scene.add(armScene);
+
+
 
   /* Play embedded animations */
   if (assets.robotArm.animations?.length) {

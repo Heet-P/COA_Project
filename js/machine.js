@@ -2,6 +2,8 @@
    machine.js  — CPU register board (repositioned)
    ────────────────────────────────────────── */
 
+import { makeLabel } from './labels.js';
+
 const REG_NAMES = ['PC', 'SP', 'ACC', 'R0', 'R1', 'FLAGS'];
 const REG_Y_START = 2.60;
 const REG_SPACING = 0.60;
@@ -19,6 +21,13 @@ export function initMachine(scene) {
   bg.castShadow = true;
   scene.add(bg);
   bgMesh = bg;
+
+  /* Floating label: REGISTERS */
+  const lbl = makeLabel('REGISTERS', {
+    color: '#44ffaa', bgColor: '#001a10', bgAlpha: 0.6, fontSize: 28, scale: 1.2
+  });
+  lbl.position.set(BOARD_POS.x, 4.2, BOARD_POS.z);
+  scene.add(lbl);
 
   /* Registers */
   REG_NAMES.forEach((name, i) => {

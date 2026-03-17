@@ -2,6 +2,8 @@
    factory.js   — outdoor "+" platform, ground, sky
    ────────────────────────────────────────── */
 
+import { makeLabel } from './labels.js';
+
 export function initFactory(scene) {
 
   /* ── Ground plane (grass) ── */
@@ -122,4 +124,5 @@ export function initFactory(scene) {
 
   /* ── Fog (sky-tint depth) ── */
   scene.fog = new THREE.Fog(0x87CEEB, 50, 130);
+
 }
