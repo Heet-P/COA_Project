@@ -1,27 +1,25 @@
 /* ──────────────────────────────────────────
-   irq.js   — red interrupt cube (repositioned path)
+   irq.js   — red interrupt cube on the INPUT belt
    ────────────────────────────────────────── */
 
-const PATH = [
-  new THREE.Vector3(18, 2.5, 4),
-  new THREE.Vector3(12, 2.5, 4),
-  new THREE.Vector3(9,  2.0, 5),
-  new THREE.Vector3(7,  1.6, 6),    // arrive at CPU board
-];
-const TRAVEL_SPEED = 4.0;
+const PLAT_Y   = 0.32;
+const BLOCK_Y  = PLAT_Y + 0.26;
+const START_X  = -12;
+const END_X    = -1.3;
+const TRAVEL_SPEED = 6.0;
 
 let cube = null;
-let pathIndex = 0;
 let active = false;
 let arrived = false;
+let sceneRef = null;
 
 export function initIrq(scene) {
-  /* pre-create hidden cube */
-  const geo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
+  sceneRef = scene;
+  const geo = new THREE.BoxGeometry(0.55, 0.55, 0.55);
   const mat = new THREE.MeshStandardMaterial({
     color: 0xff2244,
     emissive: 0xff0000,
-    emissiveIntensity: 0.6,
+    emissiveIntensity: 0.7,
     roughness: 0.2,
     metalness: 0.5
   });
@@ -33,30 +31,26 @@ export function initIrq(scene) {
 
 export function fireIrq() {
   if (active) return;
-  cube.position.copy(PATH[0]);
+  cube.position.set(START_X, BLOCK_Y, 0);
   cube.visible = true;
-  pathIndex = 1;
   active = true;
   arrived = false;
 }
 
 export function tickIrq(dt) {
   if (!active || arrived) return;
-  const target = PATH[pathIndex];
-  const dir = target.clone().sub(cube.position);
-  const dist = dir.length();
-  if (dist < 0.15) {
-    pathIndex++;
-    if (pathIndex >= PATH.length) {
-      arrived = true;
-      return;
-    }
-  } else {
-    dir.normalize();
-    cube.position.addScaledVector(dir, TRAVEL_SPEED * dt);
+
+  cube.position.x += TRAVEL_SPEED * dt;
+  cube.rotation.x += dt * 5;
+  cube.rotation.z += dt * 4;
+
+  /* Pulse glow */
+  cube.material.emissiveIntensity = 0.7 + Math.sin(performance.now() * 0.008) * 0.4;
+
+  if (cube.position.x >= END_X) {
+    cube.position.x = END_X;
+    arrived = true;
   }
-  cube.rotation.x += dt * 4;
-  cube.rotation.z += dt * 3;
 }
 
 export function clearIrq() {
@@ -67,3 +61,6 @@ export function clearIrq() {
 
 export function isArrived() { return arrived; }
 export function isActive()  { return active; }
+
+/* ── NEW: expose cube mesh so the arm can grab it ── */
+export function getIrqCube()  { return cube; }

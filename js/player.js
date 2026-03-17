@@ -37,7 +37,7 @@ function applyLook() {
 export function tickPlayer(dt) {
   if (!camera) return;
   const fwd   = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-  const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+  const right = new THREE.Vector3(-Math.cos(yaw), 0, Math.sin(yaw));
 
   if (keys['KeyW']) camera.position.addScaledVector(fwd, SPEED * dt);
   if (keys['KeyS']) camera.position.addScaledVector(fwd, -SPEED * dt);

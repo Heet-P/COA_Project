@@ -171,9 +171,25 @@ export function removeInputBlock(mesh) {
   inputBlocks.splice(idx, 1);
 }
 
+/* Detach without disposing — used by stage.js so arm can still reference the mesh */
+export function detachInputBlock(mesh) {
+  const idx = inputBlocks.indexOf(mesh);
+  if (idx < 0) return;
+  mesh.visible = false;
+  inputBlocks.splice(idx, 1);
+}
+
 /* ── Pause / Resume ── */
 export function pauseConveyor()  { paused = true; }
 export function resumeConveyor() { paused = false; }
+
+/* ── Expose block lists for stage.js ── */
+export function getInputBlocks() { return inputBlocks; }
+
+/* Re-add a block to the input belt (used after stack pop / context restore) */
+export function restoreInputBlock(x) {
+  spawnInputBlock(x != null ? x : ARM_ZONE);
+}
 export function isPaused()       { return paused; }
 
 /* ── Rails ── */
