@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>CPU INTERRUPT FACTORY</title>
   <link rel="stylesheet" href="css/hud.css">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.png" type="image/png">
 </head>
+
 <body>
   <canvas id="c"></canvas>
   <div id="alarm-vfx"></div>
@@ -48,9 +51,9 @@
         instructions. Watch the Program Counter tick.</div>
     </div>
     <div id="registers">
-      <div id="r-pc">PC    0x0041</div>
-      <div id="r-sp">SP    0x1FF0</div>
-      <div id="r-irq">IRQ   IDLE</div>
+      <div id="r-pc">PC 0x0041</div>
+      <div id="r-sp">SP 0x1FF0</div>
+      <div id="r-irq">IRQ IDLE</div>
     </div>
     <div id="speed-control">SPEED: 1.0x</div>
     <div id="irq-prompt">[ PRESS X TO SEND INTERRUPT SIGNAL ]</div>
@@ -64,4 +67,5 @@
   <!-- Game entry point -->
   <script type="module" src="js/main.js"></script>
 </body>
+
 </html>
