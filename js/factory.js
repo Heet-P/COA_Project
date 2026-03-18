@@ -97,10 +97,10 @@ export function initFactory(scene) {
     g.rotation.y = rotY;
     scene.add(g);
   }
-  makeArrow(-4, 0, 0);          // west → center
-  makeArrow(4, 0, 0);           // center → east
-  makeArrow(0, -4, -Math.PI/2); // center → north
-  makeArrow(0, 4, Math.PI/2);   // center → south (flipped)
+  makeArrow(-4, 0, 0);             // west → center (east)
+  makeArrow(4, 0, 0);             // center → east
+  makeArrow(0, -4, Math.PI / 2);  // center → north
+  makeArrow(0,  4, -Math.PI / 2); // center → south
 
   /* ── Clouds ── */
   const cloudMat = new THREE.MeshBasicMaterial({

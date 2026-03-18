@@ -3,19 +3,22 @@
 
    SEQUENCE (8 stages):
    0 — BASELINE   CPU executing normally, arm picks blue blocks → output belts
-   1 — IRQ FIRED  red cube zooms along input belt, blue cubes + arm frozen
+   1 — IRQ FIRED  red cube zooms along DIAGONAL (45°) path, blue cubes + arm frozen
    2 — IRQ RECV   CPU acknowledges interrupt (alarm lights, brief pause)
    3 — IVT LOOKUP timed delay while lookup animation plays
    4 — CTX SAVE   arm picks each blue block on belt → swings toward stack,
-                   vault catches a ball per block
-   5 — ISR EXEC   arm picks up the RED IRQ cube and sends it down an output belt
-                   (the VIP lane lights up)
-   6 — CTX RESTORE vault pops balls, blue blocks respawn on belt
+                   vault catches a ball per block; HUD saves PC
+   5 — ISR EXEC   ISR handler spawns YELLOW blocks on output belts;
+                   VIP lane lights up; HUD shows ISR PC address
+   6 — CTX RESTORE vault pops balls, blue blocks respawn on belt at saved positions;
+                   HUD restores original PC
    7 — IRET       brief pause then back to stage 0
    ────────────────────────────────────────── */
 
 import { pauseConveyor, resumeConveyor,
-         getInputBlocks, detachInputBlock, restoreInputBlock }
+         getInputBlocks, detachInputBlock, restoreInputBlock,
+         saveBlockPositions, restoreBlockPositions,
+         spawnISROutputBlock, tickISRBlocks, clearISRBlocks, hasISRBlocks }
   from './conveyor.js';
 import { pauseArm, resumeArm, commandArm, isCommandDone }
   from './arm.js';
@@ -26,8 +29,28 @@ import { fireIrq, tickIrq, clearIrq, isArrived, getIrqCube }
 import { pushOneBall, popOneBall, isStackDone,
          resetStack, stackSize }
   from './vault.js';
-import { fireVip, clearVip, tickVip }
+import { fireVip, clearVip }
   from './vip.js';
+
+/* ── HUD imports ── */
+import { setStage, tickPC, setSP, setIRQ,
+         showIrqPrompt, setProgress, resetPC,
+         savePC, restorePC, setPC }
+  from './hud.js';
+
+/* ── Audio imports ── */
+import { playTick, playIrqSend, playAlarmLoop,
+         playDoorOpen, playIvtBlink, playResume }
+  from './audio.js';
+
+/* ── IVT imports ── */
+import { highlightVector, clearIvt }
+  from './ivt.js';
+
+/* ── ISR Handler imports ── */
+import { startISR, isISRDone, hideISRBlock,
+         setISRSpawnCallback }
+  from './isr-handler.js';
 
 /* ── State ── */
 let stage = 0;
@@ -38,29 +61,32 @@ let _scene = null;
 let savedCount   = 0;   // how many blue blocks were saved
 let subBusy      = false; // true while arm/vault are mid-action
 let subStep      = 0;    // tracks sub-steps within a stage
+let pcTimer      = 0;    // timer for PC ticks in baseline
 
-const HUD_STAGE  = document.getElementById('stage-label');
-const HUD_DESC   = document.getElementById('stage-desc');
+/* SP register simulation */
+let spVal = 0x1FF0;
 
-const DESCS = [
-  '🟢 BASELINE — CPU executing instructions',
-  '🔴 IRQ FIRED — interrupt request in-flight',
-  '⚠️  IRQ RECEIVED — CPU acknowledges interrupt',
-  '📖 IVT LOOKUP — finding interrupt handler address',
-  '💾 CONTEXT SAVE — arm pushes blue blocks to stack',
-  '⚡ ISR EXECUTE — arm delivers red IRQ block to output',
-  '📂 CONTEXT RESTORE — popping registers from stack',
-  '↩️  IRET — returning to interrupted program',
+/* Stage metadata: name, description, HUD color */
+const STAGES = [
+  { name: 'BASELINE EXECUTION',   desc: 'CPU fetches and executes standard instructions. Watch the Program Counter tick.', color: '#00ff88' },
+  { name: 'IRQ FIRED',            desc: 'External device sent an interrupt request. Red signal in-flight on the diagonal IRQ path.', color: '#ff2244' },
+  { name: 'IRQ RECEIVED',         desc: 'CPU acknowledges the interrupt. Current instruction completes, then handoff begins.', color: '#ffaa00' },
+  { name: 'IVT LOOKUP',           desc: 'CPU reads the Interrupt Vector Table to find the handler address for this IRQ.', color: '#44aaff' },
+  { name: 'CONTEXT SAVE',         desc: 'Pushing registers + PC onto the stack to preserve state before running the handler.', color: '#aa66ff' },
+  { name: 'ISR EXECUTE',          desc: 'Running the Interrupt Service Routine. Yellow blocks represent ISR instructions being processed.', color: '#ff6600' },
+  { name: 'CONTEXT RESTORE',      desc: 'Popping saved registers from the stack to restore the interrupted program state.', color: '#66ffaa' },
+  { name: 'IRET',                 desc: 'Return from interrupt. Restoring Program Counter and resuming normal execution.', color: '#00ddff' },
 ];
 
 export function initStage(scene) {
   _scene = scene;
-  setHud(0);
-}
 
-function setHud(s) {
-  if (HUD_STAGE) HUD_STAGE.textContent = `Stage ${s} / 7`;
-  if (HUD_DESC)  HUD_DESC.textContent  = DESCS[s] || '';
+  /* Wire ISR handler to spawn yellow blocks on belts */
+  setISRSpawnCallback((dirIdx) => {
+    spawnISROutputBlock(dirIdx);
+  });
+
+  enter(0);
 }
 
 /* ═══════════════════════════════════════════
@@ -71,7 +97,11 @@ function enter(s) {
   timer = 0;
   subBusy = false;
   subStep = 0;
-  setHud(s);
+  pcTimer = 0;
+
+  /* Update HUD stage panel */
+  const meta = STAGES[s];
+  setStage(meta.name, meta.desc, meta.color);
 
   switch (s) {
 
@@ -83,6 +113,16 @@ function enter(s) {
       clearIrq();
       resetStack();
       clearVip();
+      clearIvt();
+      hideISRBlock();
+      clearISRBlocks();
+      spVal = 0x1FF0;
+      setSP(spVal);
+      setIRQ('IDLE');
+      showIrqPrompt(true);
+      setProgress(0);
+      resetPC();
+      playResume();
       break;
 
     /* 1 — IRQ FIRED */
@@ -90,42 +130,69 @@ function enter(s) {
       pauseConveyor();
       pauseArm();
       fireIrq();
+      setIRQ('PENDING', '#ff2244');
+      showIrqPrompt(false);
+      setProgress(0, '#ff2244');
+      playIrqSend();
       break;
 
     /* 2 — IRQ RECEIVED (alarm on) */
     case 2:
       setAlarm(true);
+      setIRQ('ACKNOWLEDGED', '#ffaa00');
+      setProgress(15, '#ffaa00');
+      playAlarmLoop();
       break;
 
     /* 3 — IVT LOOKUP (timed delay) */
     case 3:
+      highlightVector(0);    // highlight IRQ0 — Timer row
+      setProgress(25, '#44aaff');
+      playIvtBlink();
       break;
 
     /* 4 — CONTEXT SAVE
-       For each blue block on the belt:
-         a) arm grabs blue block (commanded)  →  arm swings toward stack
+       Save blue block positions, then for each blue block:
+         a) arm grabs blue block (commanded) → arm swings toward stack
          b) vault launches a ball into the bin
-       These alternate in sub-steps */
+       HUD savePC preserves original PC value */
     case 4:
       savedCount = 0;
+      saveBlockPositions();   // remember where blue blocks were
+      savePC();               // HUD: push PC onto stack display
+      setIRQ('SAVING CTX', '#aa66ff');
+      setProgress(35, '#aa66ff');
+      playDoorOpen();
       break;
 
     /* 5 — ISR EXECUTE
-       arm grabs the red IRQ cube → sends it down output belt 0 (east / MEMORY)
-       VIP path lights up */
+       ISR handler spawns yellow blocks on output belts;
+       VIP path lights up; HUD shows ISR vector address */
     case 5:
       fireVip();
+      startISR();            // isr-handler starts spawning yellow blocks
+      setPC(0x0040);         // ISR handler address in HUD
+      setIRQ('SERVICING', '#ff6600');
+      setProgress(60, '#ff6600');
       break;
 
     /* 6 — CONTEXT RESTORE
-       For each saved ball: vault pops → blue block appears on belt */
+       For each saved ball: vault pops → restore blue block positions */
     case 6:
       clearVip();
+      clearIvt();
+      hideISRBlock();
+      setIRQ('RESTORING', '#66ffaa');
+      setProgress(80, '#66ffaa');
       break;
 
     /* 7 — IRET */
     case 7:
       setAlarm(false);
+      restorePC();   // HUD: restore original PC value
+      setIRQ('IDLE');
+      setProgress(100, '#00ddff');
+      playResume();
       break;
   }
 }
@@ -136,9 +203,22 @@ function enter(s) {
 export function tickStage(dt) {
   timer += dt;
 
+  /* Always tick ISR yellow blocks (they slide even between stages) */
+  tickISRBlocks(dt);
+
   switch (stage) {
 
-    /* 1 — Wait for red cube to arrive */
+    /* 0 — Baseline: tick the PC register every ~0.5s */
+    case 0:
+      pcTimer += dt;
+      if (pcTimer > 0.5) {
+        pcTimer -= 0.5;
+        tickPC();
+        playTick();
+      }
+      break;
+
+    /* 1 — Wait for red cube to arrive along diagonal */
     case 1:
       tickIrq(dt);
       if (isArrived()) enter(2);
@@ -159,7 +239,7 @@ export function tickStage(dt) {
       tickContextSave(dt);
       break;
 
-    /* 5 — ISR EXECUTE: arm delivers the red cube */
+    /* 5 — ISR EXECUTE: ISR handler spawns yellow blocks */
     case 5:
       tickIsrExecute(dt);
       break;
@@ -216,6 +296,14 @@ function tickContextSave(dt) {
       savedCount++;
       subBusy = false;
       subStep = 0;   // loop back for next block
+
+      /* Update SP register (push = decrement) */
+      spVal -= 4;
+      setSP(spVal);
+
+      /* Update progress bar */
+      const pct = 35 + (savedCount / Math.max(savedCount + blocks.length, 1)) * 25;
+      setProgress(Math.min(pct, 59), '#aa66ff');
     });
   }
 }
@@ -224,32 +312,20 @@ function tickContextSave(dt) {
    Stage 5 — ISR EXECUTE sub-machine
    ───────────────────────────────────── */
 function tickIsrExecute(dt) {
-  tickVip(dt);
+  /* NOTE: tickIsrHandler is called from main.js render loop each frame */
 
-  if (subBusy) return;
-
-  /* Sub-step 0: command arm to grab the red cube and send to east belt */
-  if (subStep === 0) {
-    const irqCube = getIrqCube();
-    subBusy = true;
-    commandArm({
-      mesh: irqCube,
-      color: 0xff2244,
-      emissive: 0xff0000,
-      destDir: 0,       // east → MEMORY
-      toStack: false,
-      onDone: () => {
-        clearIrq();     // remove the original red cube
-        subBusy = false;
-        subStep = 1;
-      }
-    });
+  /* ISR handler is done when it's finished spawning + settle time */
+  if (isISRDone() && !hasISRBlocks()) {
+    /* All yellow blocks have left the scene → move to restore */
+    enter(6);
     return;
   }
 
-  /* Sub-step 1: wait a beat, then move to context restore */
-  if (subStep === 1) {
-    if (timer > 2.0) enter(6);
+  /* While ISR is active, tick the ISR PC counter in HUD */
+  pcTimer += dt;
+  if (pcTimer > 0.4) {
+    pcTimer -= 0.4;
+    tickPC();   // PC ticks during ISR execution too
   }
 }
 
@@ -265,11 +341,21 @@ function tickContextRestore(dt) {
     popOneBall(() => {
       restoreInputBlock();   // put a blue block back on the belt
       subBusy = false;
+
+      /* Update SP register (pop = increment) */
+      spVal += 4;
+      setSP(spVal);
+
+      /* Update progress bar */
+      const remaining = stackSize();
+      const pct = 80 + ((savedCount - remaining) / Math.max(savedCount, 1)) * 15;
+      setProgress(Math.min(pct, 95), '#66ffaa');
     });
     return;
   }
 
-  /* All blocks restored — move to IRET */
+  /* All blocks restored — restore their positions and move to IRET */
+  restoreBlockPositions();
   enter(7);
 }
 

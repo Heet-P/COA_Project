@@ -10,10 +10,17 @@ const POS     = new THREE.Vector3(-4, PLAT_Y, 4);
 const BOX_W   = 2.8, BOX_H = 2.0, BOX_D = 2.0;
 
 let group, box, isrBlock, blockT, running;
-const BLOCK_SPEED = 0.55;   // seconds for full travel
+let isrBlockCount  = 0;    // how many yellow blocks to spawn
+let spawnTimer     = 0;
+let spawnedSoFar   = 0;
+const BLOCK_SPEED  = 0.55;
+const SPAWN_INTERVAL = 0.6;  // seconds between spawns
+const ISR_TOTAL_BLOCKS = 3;  // total yellow blocks to push during ISR
+
+/* callback to push ISR blocks onto belts */
+let onSpawnBlock = null;
 
 /* ── build ── */
-
 export function initIsrHandler(scene) {
   group = new THREE.Group();
   group.position.copy(POS);
@@ -47,7 +54,7 @@ export function initIsrHandler(scene) {
   lbl.position.set(0, BOX_H + 0.6, 0);
   group.add(lbl);
 
-  /* Yellow ISR block (hidden until startISR) */
+  /* Yellow ISR block (preview / animation inside box) */
   const bGeo = new THREE.BoxGeometry(0.6, 0.35, 0.6);
   const bMat = new THREE.MeshStandardMaterial({
     color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.5
@@ -63,29 +70,48 @@ export function initIsrHandler(scene) {
   scene.add(group);
 }
 
-/* ── ISR execute animation ── */
+/* ── Register callback so ISR can spawn yellow blocks on belts ── */
+export function setISRSpawnCallback(cb) {
+  onSpawnBlock = cb;
+}
 
+/* ── ISR execute animation ── */
 export function startISR() {
   running = true;
   blockT  = 0;
+  spawnTimer   = 0;
+  spawnedSoFar = 0;
   isrBlock.visible = true;
-  isrBlock.position.set(0, BOX_H / 2, 0);       // start inside box
-  box.material.emissiveIntensity = 0.8;           // glow brighter
+  isrBlock.position.set(0, BOX_H / 2, 0);
+  box.material.emissiveIntensity = 0.8;
 }
 
 export function tickIsrHandler(dt) {
   if (!running) return;
 
   blockT += dt / BLOCK_SPEED;
-  if (blockT >= 1) {
-    blockT  = 1;
+
+  /* Block pulses inside the box */
+  isrBlock.position.y = BOX_H / 2 + Math.sin(blockT * Math.PI * 2) * 0.4;
+  isrBlock.rotation.y += dt * 3;
+  box.material.emissiveIntensity = 0.6 + Math.sin(blockT * 5) * 0.3;
+
+  /* Periodically spawn yellow blocks on output belts */
+  spawnTimer += dt;
+  if (spawnedSoFar < ISR_TOTAL_BLOCKS && spawnTimer >= SPAWN_INTERVAL) {
+    spawnTimer = 0;
+    spawnedSoFar++;
+    if (onSpawnBlock) {
+      /* Alternate between output directions (East=0, North=1) */
+      onSpawnBlock(spawnedSoFar % 2 === 0 ? 0 : 1);
+    }
+  }
+
+  /* ISR finishes after all blocks spawned + extra settle time */
+  if (spawnedSoFar >= ISR_TOTAL_BLOCKS && spawnTimer > 0.8) {
     running = false;
     box.material.emissiveIntensity = 0.35;
   }
-
-  /* Block rises up out of the box then hovers above */
-  isrBlock.position.y = BOX_H / 2 + blockT * 1.5;
-  isrBlock.rotation.y += dt * 3;
 }
 
 export function isISRDone()  { return !running; }

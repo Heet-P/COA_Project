@@ -23,9 +23,25 @@ export function setStage(name, desc, color) {
   els.stageName.style.color = color;
 }
 
-let _pc = 0x0041;
+let _pc      = 0x0041;
+let _savedPC = 0x0041;
+
 export function tickPC() {
   _pc++;
+  els.rPC.textContent = 'PC    0x' + _pc.toString(16).toUpperCase().padStart(4, '0');
+}
+
+export function setPC(val) {
+  _pc = val;
+  els.rPC.textContent = 'PC    0x' + _pc.toString(16).toUpperCase().padStart(4, '0');
+}
+
+export function savePC() {
+  _savedPC = _pc;
+}
+
+export function restorePC() {
+  _pc = _savedPC;
   els.rPC.textContent = 'PC    0x' + _pc.toString(16).toUpperCase().padStart(4, '0');
 }
 

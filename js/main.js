@@ -13,8 +13,9 @@ import { initConveyor, tickConveyor } from './conveyor.js';
 import { initIrq }         from './irq.js';
 import { initVault, tickVault }       from './vault.js';
 import { initIsrHandler, tickIsrHandler } from './isr-handler.js';
+import { initIvt, tickIvt }             from './ivt.js';
 
-import { initVip }         from './vip.js';
+import { initVip, tickVip }         from './vip.js';
 import { initArm, tickArm }           from './arm.js';
 import { initStage, tickStage, onIrqKey } from './stage.js';
 
@@ -61,6 +62,7 @@ window.addEventListener('resize', () => {
   initConveyor(scene);
   initIrq(scene);
   initVault(scene);
+  initIvt(scene);
 
   initVip(scene);
   initIsrHandler(scene);
@@ -100,6 +102,8 @@ window.addEventListener('resize', () => {
     tickStage(dt);
     tickVault(dt);
     tickIsrHandler(dt);
+    tickIvt(dt);
+    tickVip(dt);
 
     tickArm(dt);
     tickMachine(dt);

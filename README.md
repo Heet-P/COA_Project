@@ -66,7 +66,7 @@ coa/
 ### Run Locally
 
 ```bash
-npx http-server ./coa -p 8080 --cors -c-1
+npx http-server c:\Users\Heet\Desktop\Coding\coa -p 8080 --cors -c-1
 ```
 
 Then open **http://localhost:8080** in your browser.

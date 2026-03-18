@@ -193,6 +193,76 @@ export function restoreInputBlock(x) {
 }
 export function isPaused()       { return paused; }
 
+/* ── Save / Restore blue block positions (context save for IRQ) ── */
+let savedPositions = [];
+
+export function saveBlockPositions() {
+  savedPositions = inputBlocks.map(b => ({
+    x: b.position.x, y: b.position.y, z: b.position.z,
+    ry: b.rotation.y, visible: b.visible
+  }));
+  return savedPositions;
+}
+
+export function restoreBlockPositions() {
+  /* Remove any existing input blocks */
+  while (inputBlocks.length > 0) {
+    const b = inputBlocks.pop();
+    sceneRef.remove(b); b.geometry.dispose(); b.material.dispose();
+  }
+  /* Re-spawn at saved positions */
+  savedPositions.forEach(sp => {
+    spawnInputBlock(sp.x);
+    const b = inputBlocks[inputBlocks.length - 1];
+    b.position.set(sp.x, sp.y, sp.z);
+    b.rotation.y = sp.ry;
+    b.visible = sp.visible;
+  });
+}
+
+/* ── ISR yellow output blocks ── */
+const isrOutputBlocks = [];
+
+export function spawnISROutputBlock(dirIdx) {
+  const geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffd700, emissive: 0xffaa00,
+    emissiveIntensity: 0.55, roughness: 0.25, metalness: 0.5
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  const d = OUTPUTS[dirIdx];
+  mesh.position.set(d.dx ? d.dx * 1.6 : 0, BLOCK_Y, d.dz ? d.dz * 1.6 : 0);
+  mesh.castShadow = true;
+  sceneRef.add(mesh);
+  isrOutputBlocks.push({ mesh, dir: dirIdx });
+}
+
+export function tickISRBlocks(dt) {
+  for (let i = isrOutputBlocks.length - 1; i >= 0; i--) {
+    const ob = isrOutputBlocks[i];
+    const d = OUTPUTS[ob.dir];
+    ob.mesh.position.x += d.dx * OUT_SPEED * dt;
+    ob.mesh.position.z += d.dz * OUT_SPEED * dt;
+    ob.mesh.rotation.y += dt * 0.8;
+    if (Math.abs(ob.mesh.position.x) > BELT_END ||
+        Math.abs(ob.mesh.position.z) > BELT_END) {
+      sceneRef.remove(ob.mesh);
+      ob.mesh.geometry.dispose(); ob.mesh.material.dispose();
+      isrOutputBlocks.splice(i, 1);
+    }
+  }
+}
+
+export function clearISRBlocks() {
+  for (const ob of isrOutputBlocks) {
+    sceneRef.remove(ob.mesh);
+    ob.mesh.geometry.dispose(); ob.mesh.material.dispose();
+  }
+  isrOutputBlocks.length = 0;
+}
+
+export function hasISRBlocks() { return isrOutputBlocks.length > 0; }
+
 /* ── Rails ── */
 function createRails(scene) {
   const mat = new THREE.MeshStandardMaterial({
@@ -215,7 +285,29 @@ function createRails(scene) {
   });
 }
 
-/* ── Labels removed for cleaner view ── */
+/* ── Destination tags at belt endpoints ── */
 function createLabels(scene) {
-  /* intentionally empty — kept minimal */
+  const tags = [
+    // Input belt — source end (left)
+    { text: '⬅ INSTRUCTION FETCH',  x: -11.5, y: PLAT_Y + 1.2, z: 0,
+      color: '#00ccff', bg: '#001a33' },
+    // East output — destination
+    { text: 'DATA MEMORY ➡',  x: 11.5, y: PLAT_Y + 1.2, z: 0,
+      color: '#44ff88', bg: '#003311' },
+    // North output — destination
+    { text: '↑ I/O PORT',  x: 0, y: PLAT_Y + 1.2, z: -11.5,
+      color: '#ff8844', bg: '#331a00' },
+    // South output — destination
+    { text: '↓ REGISTER FILE',  x: 0, y: PLAT_Y + 1.2, z: 11.5,
+      color: '#aa66ff', bg: '#1a0033' },
+  ];
+
+  tags.forEach(t => {
+    const sp = makeLabel(t.text, {
+      fontSize: 30, color: t.color, bgColor: t.bg,
+      bgAlpha: 0.75, scale: 1.6
+    });
+    sp.position.set(t.x, t.y, t.z);
+    scene.add(sp);
+  });
 }
