@@ -25,6 +25,7 @@ let spawnCD  = 0;
 
 /* Floating text effects array */
 const floatingTexts = [];
+const confettiParticles = [];
 
 /* Output direction vectors */
 const OUTPUTS = [
@@ -158,7 +159,7 @@ export function tickConveyor(dt) {
   /* Tick floating texts */
   for (let i = floatingTexts.length - 1; i >= 0; i--) {
     const ft = floatingTexts[i];
-    ft.mesh.position.y += dt * 0.8;
+    ft.mesh.position.y += dt * 1.5;
     ft.ttl -= dt;
     ft.mesh.material.opacity = ft.ttl;
     if (ft.ttl <= 0) {
@@ -166,6 +167,31 @@ export function tickConveyor(dt) {
       ft.mesh.material.map.dispose();
       ft.mesh.material.dispose();
       floatingTexts.splice(i, 1);
+    }
+  }
+
+  /* Tick confetti */
+  for (let i = confettiParticles.length - 1; i >= 0; i--) {
+    const p = confettiParticles[i];
+    p.mesh.position.x += p.vx * dt;
+    p.mesh.position.y += p.vy * dt;
+    p.mesh.position.z += p.vz * dt;
+    p.vy -= 9.8 * dt; // gravity
+    p.mesh.rotation.x += p.rx * dt;
+    p.mesh.rotation.y += p.ry * dt;
+    p.ttl -= dt;
+
+    // Scale down near end of life
+    if (p.ttl < 0.5) {
+      const s = Math.max(0.01, p.ttl * 2);
+      p.mesh.scale.set(s, s, s);
+    }
+
+    if (p.ttl <= 0) {
+      sceneRef.remove(p.mesh);
+      p.mesh.geometry.dispose();
+      p.mesh.material.dispose();
+      confettiParticles.splice(i, 1);
     }
   }
 
@@ -315,22 +341,59 @@ function createRails(scene) {
   });
 }
 
-/* ── Floating Text Effect ── */
+/* ── Floating Text & Confetti Effects ── */
+function spawnConfetti(x, y, z) {
+  const colors = [0xff0055, 0x00ff88, 0x00aaff, 0xffaa00, 0xffffff];
+  for (let i = 0; i < 15; i++) {
+    const geo = new THREE.BoxGeometry(0.15, 0.15, 0.15);
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    const mat = new THREE.MeshStandardMaterial({
+      color: col, emissive: col, emissiveIntensity: 0.6, roughness: 0.2
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+
+    // Random burst velocity
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1.5 + Math.random() * 2.5;
+    const vx = Math.cos(angle) * speed;
+    const vz = Math.sin(angle) * speed;
+    const vy = 3 + Math.random() * 4; // pop up
+
+    // Random rotation speed
+    const rx = (Math.random() - 0.5) * 10;
+    const ry = (Math.random() - 0.5) * 10;
+
+    sceneRef.add(mesh);
+    confettiParticles.push({
+      mesh, vx, vy, vz, rx, ry, ttl: 1.5 + Math.random() * 0.5
+    });
+  }
+}
+
 function spawnFloatingText(x, y, z) {
+  spawnConfetti(x, y, z);
+
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 36;
+  c.width = 512; c.height = 128; // bigger canvas for better resolution
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#00ff88';
-  ctx.font = 'bold 18px monospace';
+  ctx.fillStyle = '#00ffaa'; // slightly more vibrant
+  ctx.font = 'bold 36px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('DATA TRANSMITTED', 128, 24);
+  ctx.shadowColor = '#00aa55';
+  ctx.shadowBlur = 10;
+  ctx.fillText('DATA TRANSMITTED', 256, 64);
+
   const tex = new THREE.CanvasTexture(c);
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 1.0 });
   const sp = new THREE.Sprite(mat);
-  sp.scale.set(1.5, 0.21, 1);
+
+  // Make it bigger and more visible
+  sp.scale.set(4.0, 1.0, 1);
   sp.position.set(x, y, z);
   sceneRef.add(sp);
-  floatingTexts.push({ mesh: sp, ttl: 1.0 });
+
+  floatingTexts.push({ mesh: sp, ttl: 1.2 });
 }
 
 /* ── Destination tags at belt endpoints ── */
@@ -361,16 +424,23 @@ function createLabels(scene) {
     // Idea A: Data Sink Gateway at each endpoint (except input)
     if (t.x > 0 || Math.abs(t.z) > 0) {
       const gwMat = new THREE.MeshStandardMaterial({
-        color: t.color, emissive: t.color, emissiveIntensity: 0.2,
-        transparent: true, opacity: 0.3, roughness: 0.2, side: THREE.DoubleSide
+        color: t.color, emissive: t.color, emissiveIntensity: 0.8, // much brighter
+        transparent: true, opacity: 0.6, // more solid
+        roughness: 0.1, metalness: 0.8, side: THREE.DoubleSide
       });
-      // Gateway arch
-      const gwGeo = new THREE.BoxGeometry(1.4, 1.2, 0.2);
+      // Gateway arch (taller and wider to be more prominent)
+      const gwGeo = new THREE.BoxGeometry(2.0, 2.0, 0.4);
       const gw = new THREE.Mesh(gwGeo, gwMat);
+
+      // Wireframe to make it look cooler
+      const edges = new THREE.EdgesGeometry(gwGeo);
+      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+      gw.add(line);
+
       // Position appropriately at the edge based on axis
-      if (t.x > 0) gw.position.set(11.8, PLAT_Y + 0.6, 0);
-      else if (t.z > 0) { gw.position.set(0, PLAT_Y + 0.6, 11.8); gw.rotation.y = Math.PI / 2; }
-      else if (t.z < 0) { gw.position.set(0, PLAT_Y + 0.6, -11.8); gw.rotation.y = Math.PI / 2; }
+      if (t.x > 0) gw.position.set(11.8, PLAT_Y + 1.0, 0);
+      else if (t.z > 0) { gw.position.set(0, PLAT_Y + 1.0, 11.8); gw.rotation.y = Math.PI / 2; }
+      else if (t.z < 0) { gw.position.set(0, PLAT_Y + 1.0, -11.8); gw.rotation.y = Math.PI / 2; }
       scene.add(gw);
     }
   });

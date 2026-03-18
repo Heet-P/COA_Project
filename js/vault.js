@@ -8,7 +8,7 @@ import { makeLabel, makeArrowLabel } from './labels.js';
 
 const PLAT_Y   = 0.5;
 const POS      = new THREE.Vector3(4, PLAT_Y, 4);
-const BOX_W    = 2.2, BOX_H = 2.4, BOX_D = 2.2;
+const BOX_W    = 2.2, BOX_H = 8.0, BOX_D = 2.2;
 const WALL     = 0.08;
 const ARC_DUR  = 0.7;        // seconds per push / pop arc
 
@@ -64,7 +64,7 @@ export function initVault(scene) {
 
   /* Floating label: STACK */
   const lbl = makeLabel('STACK', {
-    color: '#ff99bb', bgColor: '#1a0010', bgAlpha: 0.6, fontSize: 28, scale: 1.2
+    color: '#ff99bb', bgColor: '#1a0010', bgAlpha: 0.35, fontSize: 28, scale: 1.2
   });
   lbl.position.set(0, BOX_H + 0.6, 0);
   group.add(lbl);
