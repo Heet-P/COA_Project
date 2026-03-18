@@ -421,27 +421,46 @@ function createLabels(scene) {
     sp.position.set(t.x, t.y, t.z);
     scene.add(sp);
 
-    // Idea A: Data Sink Gateway at each endpoint (except input)
+    // Idea A: Data Sink Portal at each endpoint (except input)
     if (t.x > 0 || Math.abs(t.z) > 0) {
-      const gwMat = new THREE.MeshStandardMaterial({
-        color: t.color, emissive: t.color, emissiveIntensity: 0.8, // much brighter
-        transparent: true, opacity: 0.6, // more solid
-        roughness: 0.1, metalness: 0.8, side: THREE.DoubleSide
-      });
-      // Gateway arch (taller and wider to be more prominent)
-      const gwGeo = new THREE.BoxGeometry(2.0, 2.0, 0.4);
-      const gw = new THREE.Mesh(gwGeo, gwMat);
+      const gwGroup = new THREE.Group();
 
-      // Wireframe to make it look cooler
-      const edges = new THREE.EdgesGeometry(gwGeo);
-      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
-      gw.add(line);
+      // Portal mirror interior (oval)
+      // CylinderGeometry(radiusTop, radiusBottom, height, radialSegments)
+      const portalGeo = new THREE.CylinderGeometry(1.0, 1.0, 0.1, 32);
+      const portalMat = new THREE.MeshStandardMaterial({
+        color: t.color, emissive: t.color, emissiveIntensity: 0.6,
+        transparent: true, opacity: 0.5, roughness: 0.1, metalness: 0.9
+      });
+      const portal = new THREE.Mesh(portalGeo, portalMat);
+      portal.rotation.x = Math.PI / 2;
+
+      // Make it an oval by scaling the group
+      portal.scale.set(1.0, 1.0, 1.6); // stretch height
+
+      // Glowing border frame (torus)
+      const frameGeo = new THREE.TorusGeometry(1.0, 0.08, 16, 32);
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8
+      });
+      const frame = new THREE.Mesh(frameGeo, frameMat);
+      frame.scale.set(1.0, 1.6, 1.0); // stretch to match oval
+
+      gwGroup.add(portal);
+      gwGroup.add(frame);
 
       // Position appropriately at the edge based on axis
-      if (t.x > 0) gw.position.set(11.8, PLAT_Y + 1.0, 0);
-      else if (t.z > 0) { gw.position.set(0, PLAT_Y + 1.0, 11.8); gw.rotation.y = Math.PI / 2; }
-      else if (t.z < 0) { gw.position.set(0, PLAT_Y + 1.0, -11.8); gw.rotation.y = Math.PI / 2; }
-      scene.add(gw);
+      if (t.x > 0) {
+        gwGroup.position.set(11.8, PLAT_Y + 1.6, 0);
+        gwGroup.rotation.y = Math.PI / 2;
+      }
+      else if (t.z > 0) {
+        gwGroup.position.set(0, PLAT_Y + 1.6, 11.8);
+      }
+      else if (t.z < 0) {
+        gwGroup.position.set(0, PLAT_Y + 1.6, -11.8);
+      }
+      scene.add(gwGroup);
     }
   });
 }

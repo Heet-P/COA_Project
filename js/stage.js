@@ -264,19 +264,23 @@ function tickContextSave(dt) {
 
   const blocks = getInputBlocks();
 
-  /* If no more blue blocks on belt, move to stage 5 */
-  if (blocks.length === 0) {
+  /* If no more blue blocks on belt AND we've saved at least 3, move to stage 5 */
+  if (blocks.length === 0 && savedCount >= 3) {
     enter(5);
     return;
   }
 
-  /* Sub-step A: command arm to grab the first available blue block */
+  /* Sub-step A: command arm to grab the first available blue block, or a dummy if none left */
   if (subStep === 0) {
-    const blk = blocks[0];
-    detachInputBlock(blk);  // remove from array + hide, but don't dispose
+    let blk = null;
+    if (blocks.length > 0) {
+      blk = blocks[0];
+      detachInputBlock(blk);  // remove from array + hide, but don't dispose
+    }
+
     subBusy = true;
     commandArm({
-      mesh: blk,
+      mesh: blk, // if null, arm.js automatically creates a dummy block
       color: 0x00aaff,
       emissive: 0x004488,
       toStack: true,
@@ -302,7 +306,7 @@ function tickContextSave(dt) {
       setSP(spVal);
 
       /* Update progress bar */
-      const pct = 35 + (savedCount / Math.max(savedCount + blocks.length, 1)) * 25;
+      const pct = 35 + (savedCount / Math.max(savedCount + blocks.length, 3)) * 25;
       setProgress(Math.min(pct, 59), '#aa66ff');
     });
   }
@@ -339,7 +343,13 @@ function tickContextRestore(dt) {
   if (stackSize() > 0) {
     subBusy = true;
     popOneBall(() => {
-      restoreInputBlock();   // put a blue block back on the belt
+      // Only respawn blue blocks visually if they were actually saved
+      // `savedCount` is total balls pushed. If we pushed dummy balls to hit 3,
+      // we only restore visual blue blocks up to the number we actually saved initially
+      // But actually, `restoreBlockPositions()` handles resetting everything back to exact states
+      // We'll just call `restoreInputBlock()` to have a matching animation sequence,
+      // and it will get overwritten at the end anyway by `restoreBlockPositions()`.
+      restoreInputBlock();
       subBusy = false;
 
       /* Update SP register (pop = increment) */
@@ -348,13 +358,13 @@ function tickContextRestore(dt) {
 
       /* Update progress bar */
       const remaining = stackSize();
-      const pct = 80 + ((savedCount - remaining) / Math.max(savedCount, 1)) * 15;
+      const pct = 80 + ((savedCount - remaining) / Math.max(savedCount, 3)) * 15;
       setProgress(Math.min(pct, 95), '#66ffaa');
     });
     return;
   }
 
-  /* All blocks restored — restore their positions and move to IRET */
+  /* All blocks restored — restore their original positions and move to IRET */
   restoreBlockPositions();
   enter(7);
 }
