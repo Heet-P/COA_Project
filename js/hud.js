@@ -2,6 +2,8 @@
    hud.js   — DOM HUD updates
    ────────────────────────────────────────── */
 
+import { updateRegisterValue } from './machine.js';
+
 const els = {};
 
 export function initHud() {
@@ -29,11 +31,13 @@ let _savedPC = 0x0041;
 export function tickPC() {
   _pc++;
   els.rPC.textContent = 'PC    0x' + _pc.toString(16).toUpperCase().padStart(4, '0');
+  updateRegisterValue(0, _pc);
 }
 
 export function setPC(val) {
   _pc = val;
   els.rPC.textContent = 'PC    0x' + _pc.toString(16).toUpperCase().padStart(4, '0');
+  updateRegisterValue(0, _pc);
 }
 
 export function savePC() {
@@ -43,10 +47,12 @@ export function savePC() {
 export function restorePC() {
   _pc = _savedPC;
   els.rPC.textContent = 'PC    0x' + _pc.toString(16).toUpperCase().padStart(4, '0');
+  updateRegisterValue(0, _pc);
 }
 
 export function setSP(val) {
   els.rSP.textContent = 'SP    0x' + val.toString(16).toUpperCase().padStart(4, '0');
+  updateRegisterValue(1, val);
 }
 
 export function setIRQ(text, color) {
@@ -70,4 +76,8 @@ export function fadeHint() {
 }
 
 export function getPC() { return _pc; }
-export function resetPC() { _pc = 0x0041; }
+export function resetPC() {
+  _pc = 0x0041;
+  if (els.rPC) els.rPC.textContent = 'PC    0x' + _pc.toString(16).toUpperCase().padStart(4, '0');
+  updateRegisterValue(0, _pc);
+}

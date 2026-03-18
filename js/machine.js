@@ -10,70 +10,143 @@ const REG_SPACING = 0.60;
 const BOARD_POS = { x: 7, y: 0, z: 6 };   // southeast of platform
 
 let bgMesh, regs = [], flashQ = [];
+let regTexts = []; // keep track of the canvas contexts/textures to update them dynamically
+const initVals = [0x0041, 0x1FF0, 0x0000, 0x0000, 0x0000, 0x0000];
 
-export function initMachine(scene) {
+let machineGroup;
+let cameraRef;
+
+function toHex(val) {
+  return '0x' + val.toString(16).toUpperCase().padStart(4, '0');
+}
+
+export function initMachine(scene, camera) {
+  cameraRef = camera;
+  machineGroup = new THREE.Group();
+  machineGroup.position.set(BOARD_POS.x, 2.4, BOARD_POS.z);
+  scene.add(machineGroup);
+
   /* Background board */
   const bg = new THREE.Mesh(
     new THREE.BoxGeometry(2.8, 4.2, 0.2),
     new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.6 })
   );
-  bg.position.set(BOARD_POS.x, 2.4, BOARD_POS.z);
+  bg.position.set(0, 0, 0);
   bg.castShadow = true;
-  scene.add(bg);
+  machineGroup.add(bg);
   bgMesh = bg;
 
   /* Floating label: REGISTERS */
   const lbl = makeLabel('REGISTERS', {
     color: '#44ffaa', bgColor: '#001a10', bgAlpha: 0.6, fontSize: 28, scale: 1.2
   });
-  lbl.position.set(BOARD_POS.x, 4.2, BOARD_POS.z);
-  scene.add(lbl);
+  lbl.position.set(0, 1.8, 0);
+  machineGroup.add(lbl);
 
   /* Registers */
   REG_NAMES.forEach((name, i) => {
     // label
-    const c = document.createElement('canvas');
-    c.width = 256; c.height = 48;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#44ffaa';
-    ctx.font = 'bold 24px monospace';
-    ctx.fillText(name, 8, 34);
-    const tex = new THREE.CanvasTexture(c);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
-    sp.scale.set(1.2, 0.28, 1);
-    sp.position.set(BOARD_POS.x - 0.6, REG_Y_START - i * REG_SPACING, BOARD_POS.z + 0.15);
-    scene.add(sp);
+    const cLabel = document.createElement('canvas');
+    cLabel.width = 128; cLabel.height = 48;
+    const ctxLabel = cLabel.getContext('2d');
+    ctxLabel.fillStyle = '#44ffaa';
+    ctxLabel.font = 'bold 24px monospace';
+    ctxLabel.fillText(name, 8, 34);
+    const spLabel = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cLabel) }));
+    spLabel.scale.set(0.8, 0.28, 1);
+    spLabel.position.set(-0.7, (REG_Y_START - 2.4) - i * REG_SPACING, 0.15);
+    machineGroup.add(spLabel);
 
-    // value bar
-    const bar = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 0.22, 0.08),
-      new THREE.MeshStandardMaterial({ color: 0x00cc66, emissive: 0x00cc66, emissiveIntensity: 0.3 })
-    );
-    bar.position.set(BOARD_POS.x + 0.6, REG_Y_START - i * REG_SPACING, BOARD_POS.z + 0.15);
-    scene.add(bar);
-    regs.push(bar);
+    // Dynamic value sprite (replaces the plain green bar)
+    const cVal = document.createElement('canvas');
+    cVal.width = 256; cVal.height = 48;
+    const ctxVal = cVal.getContext('2d');
+    ctxVal.fillStyle = '#00ff88';
+    ctxVal.font = 'bold 28px monospace';
+    ctxVal.fillText(toHex(initVals[i]), 8, 34);
+
+    const texVal = new THREE.CanvasTexture(cVal);
+    const spVal = new THREE.Sprite(new THREE.SpriteMaterial({ map: texVal }));
+    spVal.scale.set(1.4, 0.28, 1);
+    spVal.position.set(0.4, (REG_Y_START - 2.4) - i * REG_SPACING, 0.15);
+    machineGroup.add(spVal);
+
+    regs.push(spVal);
+    regTexts.push({ ctx: ctxVal, tex: texVal });
   });
 }
 
-/* Flash a random register bar to show activity */
+let lastVals = Array(6).fill(0);
+let lastTexts = Array(6).fill("");
+
+function redrawRegText(idx, text, color) {
+  const rt = regTexts[idx];
+  rt.ctx.clearRect(0, 0, 256, 48);
+  rt.ctx.fillStyle = color;
+  rt.ctx.fillText(text, 8, 34);
+  rt.tex.needsUpdate = true;
+}
+
+/* Update specific register value text */
+export function updateRegisterValue(idx, val) {
+  if (idx < 0 || idx >= regTexts.length) return;
+  lastVals[idx] = val;
+  lastTexts[idx] = toHex(val);
+  redrawRegText(idx, lastTexts[idx], '#ffffff');
+
+  // Also flash the sprite by altering color
+  const sp = regs[idx];
+  sp.material.color.setHex(0xffffff);
+  flashQ.push({ mesh: sp, ttl: 0.25 });
+}
+
+/* Update specific register string text (e.g. for flags) */
+export function updateRegisterText(idx, text) {
+  if (idx < 0 || idx >= regTexts.length) return;
+  lastTexts[idx] = text;
+  redrawRegText(idx, text, '#ffffff');
+
+  const sp = regs[idx];
+  sp.material.color.setHex(0xffffff);
+  flashQ.push({ mesh: sp, ttl: 0.25 });
+}
+
+/* Flash a random register to show activity (e.g. ACC, R0, R1) */
 export function flashRegister() {
-  const r = regs[Math.floor(Math.random() * regs.length)];
-  if (!r) return;
-  r.material.emissiveIntensity = 1.6;
-  flashQ.push({ mesh: r, ttl: 0.35 });
+  const indices = [2, 3, 4]; // ACC, R0, R1
+  const idx = indices[Math.floor(Math.random() * indices.length)];
+  const sp = regs[idx];
+  sp.material.color.setHex(0xaaaaaa);
+  flashQ.push({ mesh: sp, ttl: 0.35 });
+
+  // also change the value randomly to look active
+  updateRegisterValue(idx, Math.floor(Math.random() * 0xFFFF));
 }
 
 /* Called from conveyor to tick PC (index 0) */
 export function tickPC() {
-  flashQ.push({ mesh: regs[0], ttl: 0.25 });
-  regs[0].material.emissiveIntensity = 1.6;
+  // Let's rely on stage.js or hud.js to call updateRegisterValue for PC
+  // If called without value, we just flash it
+  const sp = regs[0];
+  sp.material.color.setHex(0xffffff);
+  flashQ.push({ mesh: sp, ttl: 0.25 });
 }
 
 export function tickMachine(dt) {
+  if (machineGroup && cameraRef) {
+    machineGroup.lookAt(cameraRef.position);
+  }
+
   for (let i = flashQ.length - 1; i >= 0; i--) {
     flashQ[i].ttl -= dt;
     if (flashQ[i].ttl <= 0) {
-      flashQ[i].mesh.material.emissiveIntensity = 0.3;
+      // restore normal color
+      flashQ[i].mesh.material.color.setHex(0xffffff);
+      // Reset text color to green via canvas redraw
+      const idx = regs.indexOf(flashQ[i].mesh);
+      if (idx !== -1) {
+        redrawRegText(idx, lastTexts[idx] || toHex(initVals[idx]), '#00ff88');
+      }
       flashQ.splice(i, 1);
     }
   }
