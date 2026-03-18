@@ -6,16 +6,87 @@ import { makeLabel } from './labels.js';
 
 export function initFactory(scene) {
 
-  /* ── Ground plane (grass) ── */
+  /* ── Ground plane (concrete floor) ── */
   const groundGeo = new THREE.PlaneGeometry(140, 140);
   const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x5a8f3c, roughness: 0.92
+    color: 0x3a3d40, roughness: 0.9, metalness: 0.1
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = 0;
   ground.receiveShadow = true;
   scene.add(ground);
+
+  /* ── 4 Enclosing Walls (Concrete Factory Theme) ── */
+  const wallSize = 80;
+  const wallHeight = 35;
+  const wallThick = 2;
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: 0x505458, roughness: 0.85, metalness: 0.2
+  });
+
+  // Helper to create a wall
+  function createWall(w, h, d, x, z) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+    mesh.position.set(x, h / 2, z);
+    mesh.receiveShadow = true;
+    mesh.castShadow = true;
+    scene.add(mesh);
+  }
+
+  // North, South, East, West walls
+  createWall(wallSize, wallHeight, wallThick, 0, -wallSize/2);
+  createWall(wallSize, wallHeight, wallThick, 0, wallSize/2);
+  createWall(wallThick, wallHeight, wallSize, -wallSize/2, 0);
+  createWall(wallThick, wallHeight, wallSize, wallSize/2, 0);
+
+  /* ── Hazard Stripes around the bottom ── */
+  const stripeCanvas = document.createElement('canvas');
+  stripeCanvas.width = 256;
+  stripeCanvas.height = 256;
+  const ctx = stripeCanvas.getContext('2d');
+  ctx.fillStyle = '#ffaa00'; // yellow
+  ctx.fillRect(0, 0, 256, 256);
+  ctx.fillStyle = '#111111'; // black
+  // draw angled stripes
+  for (let i = -256; i < 512; i += 64) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i + 32, 0);
+    ctx.lineTo(i - 256 + 32, 256);
+    ctx.lineTo(i - 256, 256);
+    ctx.fill();
+  }
+
+  const stripeTex = new THREE.CanvasTexture(stripeCanvas);
+  stripeTex.wrapS = THREE.RepeatWrapping;
+  stripeTex.wrapT = THREE.RepeatWrapping;
+  stripeTex.repeat.set(40, 1);
+
+  const stripeMat = new THREE.MeshStandardMaterial({ map: stripeTex, roughness: 0.6 });
+
+  function createStripe(w, d, x, z) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 1.5, d), stripeMat);
+    mesh.position.set(x, 0.75, z);
+    scene.add(mesh);
+  }
+
+  const stOffset = wallSize/2 - wallThick/2 - 0.05;
+  createStripe(wallSize - wallThick * 2, wallThick + 0.1, 0, -stOffset);
+  createStripe(wallSize - wallThick * 2, wallThick + 0.1, 0, stOffset);
+
+  const stripeTexZ = stripeTex.clone();
+  stripeTexZ.repeat.set(1, 40);
+  stripeTexZ.rotation = Math.PI / 2;
+  const stripeMatZ = new THREE.MeshStandardMaterial({ map: stripeTexZ, roughness: 0.6 });
+
+  function createStripeZ(w, d, x, z) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, 1.5, d), stripeMatZ);
+    mesh.position.set(x, 0.75, z);
+    scene.add(mesh);
+  }
+  createStripeZ(wallThick + 0.1, wallSize - wallThick * 2, -stOffset, 0);
+  createStripeZ(wallThick + 0.1, wallSize - wallThick * 2, stOffset, 0);
 
   /* ── Platform material ── */
   const platMat = new THREE.MeshStandardMaterial({
