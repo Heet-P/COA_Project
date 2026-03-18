@@ -85,28 +85,40 @@ window.addEventListener('resize', () => {
     }
   });
 
-  // X key fires IRQ
+  // Speed multiplier
+  let speedMultiplier = 1.0;
+  const speedEl = document.getElementById('speed-control');
+
+  // Input handling for X and Speed keys
   document.addEventListener('keydown', (e) => {
     if (e.code === 'KeyX') onIrqKey();
+    if (e.code === 'Digit1') { speedMultiplier = 0.5; speedEl.textContent = 'SPEED: 0.5x'; }
+    if (e.code === 'Digit2') { speedMultiplier = 1.0; speedEl.textContent = 'SPEED: 1.0x'; }
+    if (e.code === 'Digit3') { speedMultiplier = 2.0; speedEl.textContent = 'SPEED: 2.0x'; }
   });
 
   // Render loop
   const clock = new THREE.Clock();
   function loop() {
     requestAnimationFrame(loop);
-    const dt = Math.min(clock.getDelta(), 0.05);
+    let dt = Math.min(clock.getDelta(), 0.05);
     const t  = clock.elapsedTime;
 
+    // Player movement isn't affected by sim speed
     tickPlayer(dt);
-    tickConveyor(dt);
-    tickStage(dt);
-    tickVault(dt);
-    tickIsrHandler(dt);
-    tickIvt(dt);
-    tickVip(dt);
 
-    tickArm(dt);
-    tickMachine(dt);
+    // Apply simulation speed to logic
+    const simDt = dt * speedMultiplier;
+
+    tickConveyor(simDt);
+    tickStage(simDt);
+    tickVault(simDt);
+    tickIsrHandler(simDt);
+    tickIvt(simDt);
+    tickVip(simDt);
+
+    tickArm(simDt);
+    tickMachine(simDt);
     tickAlarm(t);
 
     renderer.render(scene, camera);

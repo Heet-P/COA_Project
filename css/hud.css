@@ -170,6 +170,21 @@ canvas#c {
 #r-sp  { color: var(--gold); }
 #r-irq { color: var(--dim); font-size: 11px; }
 
+/* Speed control */
+#speed-control {
+  position: fixed; top: 120px; right: 18px;
+  background: var(--bg);
+  border: 1px solid rgba(0,255,136,0.15);
+  padding: 6px 15px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #00ff88;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-align: right;
+  min-width: 120px;
+}
+
 /* IRQ prompt */
 #irq-prompt {
   position: fixed; bottom: 62px;
