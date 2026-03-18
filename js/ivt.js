@@ -13,6 +13,8 @@ let glowTarget = -1;
 const NUM_VECTORS = 6;
 const LABELS = ['IRQ0 — Timer', 'IRQ1 — Keyboard', 'IRQ2 — Disk',
                 'IRQ3 — Network', 'IRQ4 — GPU', 'IRQ5 — USB'];
+const ADDRESSES = ['0x0040', '0x00A0', '0x00B0',
+                   '0x00C0', '0x00D0', '0x00E0'];
 
 /* Colours: idle = dim green, active = bright orange-red */
 const IDLE_COLOR    = new THREE.Color(0x115522);
@@ -20,15 +22,23 @@ const IDLE_EMISSIVE = new THREE.Color(0x00ff88);
 const ACTIVE_COLOR    = new THREE.Color(0xff6600);
 const ACTIVE_EMISSIVE = new THREE.Color(0xff2200);
 
-export function initIvt(scene) {
+let ivtGroup;
+let cameraRef;
+
+export function initIvt(scene, camera) {
+  cameraRef = camera;
+  ivtGroup = new THREE.Group();
+  ivtGroup.position.set(BOARD_X, BOARD_Y, BOARD_Z);
+  scene.add(ivtGroup);
+
   /* Dark panel */
   panel = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 2.6, 0.12),
     new THREE.MeshStandardMaterial({ color: 0x0a0a1a, roughness: 0.6 })
   );
-  panel.position.set(BOARD_X, BOARD_Y, BOARD_Z);
+  panel.position.set(0, 0, 0);
   panel.castShadow = true;
-  scene.add(panel);
+  ivtGroup.add(panel);
 
   /* Title sprite */
   const tc = document.createElement('canvas');
@@ -42,24 +52,33 @@ export function initIvt(scene) {
     new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(tc) })
   );
   tsp.scale.set(2.2, 0.44, 1);
-  tsp.position.set(BOARD_X, BOARD_Y + 1.15, BOARD_Z + 0.1);
-  scene.add(tsp);
+  tsp.position.set(0, 1.15, 0.1);
+  ivtGroup.add(tsp);
 
   /* Vector rows */
   for (let i = 0; i < NUM_VECTORS; i++) {
     // label sprite
     const c = document.createElement('canvas');
-    c.width = 256; c.height = 36;
+    c.width = 300; c.height = 36;
     const ctx = c.getContext('2d');
+
+    // IRQ Name
     ctx.fillStyle = '#88bbff';
-    ctx.font = '18px monospace';
-    ctx.fillText(LABELS[i], 6, 26);
+    ctx.font = '16px monospace';
+    ctx.fillText(LABELS[i], 0, 24);
+
+    // Memory Address (the meaningful part)
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(ADDRESSES[i], 280, 24);
+
     const sp = new THREE.Sprite(
       new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c) })
     );
-    sp.scale.set(2, 0.32, 1);
-    sp.position.set(BOARD_X, BOARD_Y + 0.7 - i * 0.35, BOARD_Z + 0.1);
-    scene.add(sp);
+    sp.scale.set(2.4, 0.32, 1);
+    sp.position.set(-0.1, 0.7 - i * 0.35, 0.1);
+    ivtGroup.add(sp);
 
     // indicator dot — starts idle green
     const dot = new THREE.Mesh(
@@ -70,8 +89,8 @@ export function initIvt(scene) {
         emissiveIntensity: 0.25
       })
     );
-    dot.position.set(BOARD_X + 1.0, BOARD_Y + 0.7 - i * 0.35, BOARD_Z + 0.1);
-    scene.add(dot);
+    dot.position.set(1.0, 0.7 - i * 0.35, 0.1);
+    ivtGroup.add(dot);
     rows.push(dot);
   }
 }
@@ -93,6 +112,10 @@ export function clearIvt() {
 
 /* ── Tick: animate dots toward target state ── */
 export function tickIvt(dt) {
+  if (ivtGroup && cameraRef) {
+    ivtGroup.lookAt(cameraRef.position);
+  }
+
   rows.forEach((dot, i) => {
     const isActive = (i === glowTarget);
 

@@ -58,11 +58,11 @@ window.addEventListener('resize', () => {
   initAudio();
   initHud();
   initFactory(scene);              // no assets needed (procedural)
-  initMachine(scene);
+  initMachine(scene, camera);
   initConveyor(scene);
   initIrq(scene);
   initVault(scene);
-  initIvt(scene);
+  initIvt(scene, camera);
 
   initVip(scene);
   initIsrHandler(scene);
