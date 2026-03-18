@@ -23,6 +23,9 @@ let sceneRef = null;
 let paused   = false;
 let spawnCD  = 0;
 
+/* Floating text effects array */
+const floatingTexts = [];
+
 /* Output direction vectors */
 const OUTPUTS = [
   { dx:  1, dz:  0 },   // 0 = East  → MEMORY
@@ -135,11 +138,34 @@ export function tickConveyor(dt) {
 
     if (Math.abs(ob.mesh.position.x) > BELT_END ||
         Math.abs(ob.mesh.position.z) > BELT_END) {
+
+      // Spawn "DATA TRANSMITTED" floating text
+      spawnFloatingText(ob.mesh.position.x, ob.mesh.position.y + 0.5, ob.mesh.position.z);
+
       sceneRef.remove(ob.mesh);
       ob.mesh.geometry.dispose();
       ob.mesh.material.dispose();
       outputBlocks.splice(i, 1);
       flashRegister();
+    }
+  }
+
+  /* Tick ISR yellow blocks */
+  // Note: ISR blocks are ticked in stage.js via tickISRBlocks,
+  // but we can spawn data transmitted for them too if needed.
+  // We'll update tickISRBlocks for that.
+
+  /* Tick floating texts */
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.mesh.position.y += dt * 0.8;
+    ft.ttl -= dt;
+    ft.mesh.material.opacity = ft.ttl;
+    if (ft.ttl <= 0) {
+      sceneRef.remove(ft.mesh);
+      ft.mesh.material.map.dispose();
+      ft.mesh.material.dispose();
+      floatingTexts.splice(i, 1);
     }
   }
 
@@ -246,6 +272,10 @@ export function tickISRBlocks(dt) {
     ob.mesh.rotation.y += dt * 0.8;
     if (Math.abs(ob.mesh.position.x) > BELT_END ||
         Math.abs(ob.mesh.position.z) > BELT_END) {
+
+      // Spawn "DATA TRANSMITTED" floating text
+      spawnFloatingText(ob.mesh.position.x, ob.mesh.position.y + 0.5, ob.mesh.position.z);
+
       sceneRef.remove(ob.mesh);
       ob.mesh.geometry.dispose(); ob.mesh.material.dispose();
       isrOutputBlocks.splice(i, 1);
@@ -285,6 +315,24 @@ function createRails(scene) {
   });
 }
 
+/* ── Floating Text Effect ── */
+function spawnFloatingText(x, y, z) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 36;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#00ff88';
+  ctx.font = 'bold 18px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('DATA TRANSMITTED', 128, 24);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 1.0 });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(1.5, 0.21, 1);
+  sp.position.set(x, y, z);
+  sceneRef.add(sp);
+  floatingTexts.push({ mesh: sp, ttl: 1.0 });
+}
+
 /* ── Destination tags at belt endpoints ── */
 function createLabels(scene) {
   const tags = [
@@ -305,9 +353,25 @@ function createLabels(scene) {
   tags.forEach(t => {
     const sp = makeLabel(t.text, {
       fontSize: 30, color: t.color, bgColor: t.bg,
-      bgAlpha: 0.75, scale: 1.6
+      bgAlpha: 0.35, scale: 1.6
     });
     sp.position.set(t.x, t.y, t.z);
     scene.add(sp);
+
+    // Idea A: Data Sink Gateway at each endpoint (except input)
+    if (t.x > 0 || Math.abs(t.z) > 0) {
+      const gwMat = new THREE.MeshStandardMaterial({
+        color: t.color, emissive: t.color, emissiveIntensity: 0.2,
+        transparent: true, opacity: 0.3, roughness: 0.2, side: THREE.DoubleSide
+      });
+      // Gateway arch
+      const gwGeo = new THREE.BoxGeometry(1.4, 1.2, 0.2);
+      const gw = new THREE.Mesh(gwGeo, gwMat);
+      // Position appropriately at the edge based on axis
+      if (t.x > 0) gw.position.set(11.8, PLAT_Y + 0.6, 0);
+      else if (t.z > 0) { gw.position.set(0, PLAT_Y + 0.6, 11.8); gw.rotation.y = Math.PI / 2; }
+      else if (t.z < 0) { gw.position.set(0, PLAT_Y + 0.6, -11.8); gw.rotation.y = Math.PI / 2; }
+      scene.add(gw);
+    }
   });
 }

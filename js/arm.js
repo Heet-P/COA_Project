@@ -66,7 +66,13 @@ export function initArm(scene, assets) {
   armScene.traverse(c => { if (c.isMesh) c.castShadow = true; });
   scene.add(armScene);
 
-
+  /* Hovering CPU label */
+  const cpuLabel = makeLabel('CPU', {
+    fontSize: 32, color: '#00ccff', bgColor: '#001a33',
+    bgAlpha: 0.35, scale: 1.2
+  });
+  cpuLabel.position.set(0, 3.5, 0);
+  scene.add(cpuLabel);
 
   /* Play embedded animations */
   if (assets.robotArm.animations?.length) {
