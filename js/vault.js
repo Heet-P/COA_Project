@@ -75,9 +75,9 @@ export function initVault(scene) {
 /* ── push (context save) ── */
 
 export function pushToStack() {
-  const ballGeo = new THREE.SphereGeometry(0.25, 16, 16);
+  const ballGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
   const ballMat = new THREE.MeshStandardMaterial({
-    color: 0x66ffff, emissive: 0x00aaaa, emissiveIntensity: 0.4
+    color: 0x00aaff, emissive: 0x004488, emissiveIntensity: 0.4
   });
   const ball = new THREE.Mesh(ballGeo, ballMat);
 
@@ -120,7 +120,8 @@ export function tickVault(dt) {
     const t = animT;
     const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * midY + t * t * endY;
     animBall.position.y = y;
-    animBall.position.x = (1 - t) * -1.5;    // slight arc from left
+    animBall.position.x = (1 - t) * -1.5;
+    animBall.rotation.set(0, 0, 0); // Keep cube flat
   } else {
     /* Arc from slot → up and out */
     const startY = animBall.userData.slotY;
@@ -130,6 +131,7 @@ export function tickVault(dt) {
     const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * midY + t * t * endY;
     animBall.position.y = y;
     animBall.position.x = t * 1.5;
+    animBall.rotation.set(0, 0, 0);
 
     if (animT >= 1) {
       group.remove(animBall);
