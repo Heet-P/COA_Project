@@ -4,6 +4,7 @@
 
 import { flashRegister } from './machine.js';
 import { makeLabel } from './labels.js';
+import { onInstructionFetch } from './memory.js';
 
 /* ── Constants ── */
 const PLAT_Y     = 0.32;           // platform top
@@ -94,6 +95,9 @@ function spawnInputBlock(sx) {
   mesh.castShadow = true;
   sceneRef.add(mesh);
   inputBlocks.push(mesh);
+
+  // Trigger memory fetch animation
+  onInstructionFetch();
 }
 
 /* Called by arm.js after release */

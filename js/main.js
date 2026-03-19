@@ -14,6 +14,7 @@ import { initIrq }         from './irq.js';
 import { initVault, tickVault }       from './vault.js';
 import { initIsrHandler, tickIsrHandler } from './isr-handler.js';
 import { initIvt, tickIvt }             from './ivt.js';
+import { initMemory } from './memory.js';
 
 import { initVip, tickVip }         from './vip.js';
 import { initArm, tickArm }           from './arm.js';
@@ -63,6 +64,7 @@ window.addEventListener('resize', () => {
   initIrq(scene);
   initVault(scene);
   initIvt(scene, camera);
+  initMemory(scene);
 
   initVip(scene);
   initIsrHandler(scene);
