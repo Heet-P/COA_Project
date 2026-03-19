@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <title>CPU INTERRUPT FACTORY</title>
   <link rel="stylesheet" href="css/hud.css">
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="icon" href="favicon.png" type="image/png">
 </head>
 
@@ -88,20 +89,135 @@
 
   <!-- INTRO SCREEN -->
   <div id="intro" style="display:none">
-    <h1>CPU INTERRUPT<br>FACTORY</h1>
-    <div class="sub">FPV EDUCATIONAL SIMULATION</div>
-    <p>
-      You are entering a live CPU processing plant.<br>
-      Blue instruction blocks flow through the pipeline.<br>
-      The <strong>Program Counter</strong> ticks with every completed instruction.<br><br>
-      Press <strong>[ X ]</strong> to fire an Interrupt Request signal.<br><br>
-      <span class="kbd">W A S D</span> Move &nbsp;
-      <span class="kbd">Mouse</span> Look &nbsp;
-      <span class="kbd">X</span> Fire IRQ &nbsp;
-      <span class="kbd">ESC</span> Cursor<br><br>
-      <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span> Change Speed (0.5x, 1x, 2x)
-    </p>
-    <button id="enter-btn">[ ENTER FACTORY ]</button>
+    <!-- TopAppBar -->
+    <header class="intro-header">
+      <div class="intro-header-icons" style="gap: 1rem;">
+        <span class="intro-header-title">CPU-INT-FACTORY v1.0</span>
+        <div class="intro-blinking-cursor"></div>
+      </div>
+      <div class="intro-header-icons">
+        <span class="material-symbols-outlined intro-icon">terminal</span>
+        <span class="material-symbols-outlined intro-icon">settings</span>
+      </div>
+      <div class="intro-status-dots">
+        <div class="intro-dot intro-dot-orange"></div>
+        <div class="intro-dot intro-dot-cyan"></div>
+        <div class="intro-dot intro-dot-green"></div>
+      </div>
+    </header>
+
+    <!-- Main Content Canvas -->
+    <main class="intro-main">
+      <!-- Hero Section -->
+      <section class="intro-hero">
+        <div class="intro-live-badge">
+          ◉ LIVE SIMULATION
+        </div>
+        <div style="position: relative;">
+          <h1 class="intro-title intro-font-black intro-uppercase intro-tracking-tighter">
+            CPU INTERRUPT
+          </h1>
+          <h1 class="intro-title intro-font-black intro-uppercase intro-tracking-tighter intro-title-offset">
+            FACTORY
+          </h1>
+        </div>
+        <p class="intro-subtitle intro-font-bold intro-text-black">
+          FPV EDUCATIONAL SIMULATION DESIGNED FOR LOW-LEVEL ARCHITECTURE VISUALIZATION.
+        </p>
+      </section>
+
+      <!-- Main Layout Grid -->
+      <div class="intro-grid">
+        <!-- Description Card (Monolith) -->
+        <div class="intro-desc-card">
+          <div class="intro-desc-text">
+            <p style="margin-bottom: 1.5rem;">
+              Execute micro-instructions in real-time. Monitor the <span class="intro-pc-badge">Program Counter</span> as it traverses the stack. Test architectural limits under heavy interrupt loads.
+            </p>
+            <div class="intro-desc-action">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+              <span class="intro-tracking-widest">⚡ PRESS [ X ] TO FIRE IRQ INTERRUPT LINE...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls Row / Key mapping -->
+        <div class="intro-controls">
+          <div class="intro-controls-grid">
+            <!-- Navigation Keys -->
+            <div class="intro-key-card intro-key-card-cyan">
+              <span class="intro-key-title">Navigation</span>
+              <div class="intro-key-row">
+                <div class="intro-key intro-key-yellow intro-key-square">W</div>
+              </div>
+              <div class="intro-key-row">
+                <div class="intro-key intro-key-yellow intro-key-square">A</div>
+                <div class="intro-key intro-key-yellow intro-key-square">S</div>
+                <div class="intro-key intro-key-yellow intro-key-square">D</div>
+              </div>
+            </div>
+
+            <!-- Speed Controls -->
+            <div class="intro-key-card intro-key-card-orange">
+              <span class="intro-key-title">Clock Speed</span>
+              <div class="intro-key-row">
+                <div class="intro-key intro-key-cyan intro-key-square">1</div>
+                <div class="intro-key intro-key-cyan intro-key-square">2</div>
+                <div class="intro-key intro-key-cyan intro-key-square">3</div>
+              </div>
+            </div>
+
+            <!-- Utility Keys -->
+            <div class="intro-key-card intro-key-card-cyan">
+              <span class="intro-key-title">Action</span>
+              <div class="intro-key-row">
+                <div class="intro-key intro-key-yellow intro-key-square">X</div>
+                <div class="intro-key-label">Interrupt</div>
+              </div>
+            </div>
+
+            <!-- Exit -->
+            <div class="intro-key-card intro-key-card-cyan">
+              <span class="intro-key-title">Global</span>
+              <div class="intro-key-row">
+                <div class="intro-key intro-key-yellow intro-key-wide">ESC</div>
+                <div class="intro-key-label">Menu</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enter Button -->
+          <button id="enter-btn">
+            [ ENTER FACTORY ]
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- BottomNavBar / Status Bar -->
+    <footer class="intro-footer">
+      <div class="intro-status-item intro-status-green">
+        <span class="material-symbols-outlined" style="font-size: 14px; font-variation-settings: 'FILL' 1;">memory</span>
+        STAGE:BOOT
+      </div>
+      <div class="intro-status-item intro-status-dark">
+        <span class="material-symbols-outlined" style="font-size: 14px;">developer_board</span>
+        PC:0x00
+      </div>
+      <div class="intro-status-item intro-status-dark" style="animation: blink 1s step-end infinite;">
+        <span class="material-symbols-outlined" style="font-size: 14px;">emergency_home</span>
+        IRQ:OFF
+      </div>
+      <div class="intro-status-item intro-status-green-text">
+        <span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span>
+        SYSTEM:READY
+      </div>
+    </footer>
+
+    <!-- Background Elements -->
+    <div class="intro-bg-element">
+      <div class="intro-bg-square"></div>
+    </div>
   </div>
 
   <!-- HUD -->
