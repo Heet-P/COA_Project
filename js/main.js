@@ -64,7 +64,7 @@ window.addEventListener('resize', () => {
   initIrq(scene);
   initVault(scene);
   initIvt(scene, camera);
-  initMemory(scene);
+  initMemory(scene, new THREE.Vector3(-14, 0.32, 0));
 
   initVip(scene);
   initIsrHandler(scene);
