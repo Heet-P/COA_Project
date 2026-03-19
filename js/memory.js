@@ -2,6 +2,7 @@
 // Sits just before the instruction fetch conveyor belt
 // Displays a stack of flat memory cell slabs with an incrementing PC label
 
+import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js';
 
 let memoryGroup = null;
 let pcLabel = null;
