@@ -427,6 +427,154 @@ canvas#c {
   z-index: 50;
 }
 
+/* ── TOUR UI ── */
+.tour-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #0D0D0D;
+  border: 4px solid #000;
+  box-shadow: 6px 6px 0px #FFE500;
+  padding: 30px;
+  width: 450px;
+  pointer-events: auto;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  color: #fff;
+}
+
+.tour-title {
+  color: #FFE500;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: -1px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.tour-text {
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.tour-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tour-btn {
+  padding: 12px;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  border: 2px solid #000;
+  text-align: center;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.tour-btn-primary {
+  background: #00F5FF;
+  color: #000;
+  box-shadow: 3px 3px 0px #000;
+}
+
+.tour-btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000;
+}
+
+.tour-btn-secondary {
+  background: transparent;
+  color: #FFE500;
+  border: 2px solid #FFE500;
+}
+
+.tour-btn-secondary:hover {
+  background: rgba(255, 229, 0, 0.1);
+}
+
+.tour-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #333;
+  padding-bottom: 10px;
+  margin-bottom: 5px;
+}
+
+.tour-badge {
+  background: #FF6B00;
+  color: #000;
+  padding: 2px 8px;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.tour-count {
+  color: #00F5FF;
+  font-weight: bold;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.tour-step-title {
+  color: #00FF41;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.tour-step-desc {
+  color: #ccc;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 60px;
+}
+
+.tour-action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.tour-action-pill {
+  background: rgba(0, 245, 255, 0.15);
+  color: #00F5FF;
+  border: 1px solid #00F5FF;
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.tour-controls-hint {
+  color: #666;
+  font-size: 11px;
+}
+
+.tour-progress-bg {
+  height: 4px;
+  background: #222;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.tour-progress-fill {
+  height: 100%;
+  background: #FFE500;
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
 /* Progress bar */
 #progress-bar {
   position: fixed;

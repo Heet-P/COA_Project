@@ -222,6 +222,40 @@
 
   <!-- HUD -->
   <div id="hud" style="display:none">
+    <!-- TOUR START CARD -->
+    <div id="tour-start-card" class="tour-card" style="display:none;">
+      <h2 class="tour-title">TAKE THE GUIDED TOUR?</h2>
+      <p class="tour-text">Learn how the CPU handles interrupts step-by-step before entering free roam mode.</p>
+      <div class="tour-buttons">
+        <button id="tour-yes-btn" class="tour-btn tour-btn-primary">[ TAKE THE TOUR ]</button>
+        <button id="tour-no-btn" class="tour-btn tour-btn-secondary">SKIP — FREE ROAM</button>
+      </div>
+    </div>
+
+    <!-- ACTIVE TOUR STEP CARD -->
+    <div id="tour-step-card" class="tour-card" style="display:none; bottom: 40px; top: auto; width: 600px;">
+      <div class="tour-header">
+        <span class="tour-badge">GUIDED TOUR</span>
+        <span id="tour-step-count" class="tour-count">1 / 11</span>
+      </div>
+      <h3 id="tour-step-main" class="tour-step-title">Welcome to the CPU Interrupt Factory.</h3>
+      <p id="tour-step-sub" class="tour-step-desc">This environment represents what happens inside a processor during normal execution. Every object maps to a real CPU concept.</p>
+      <div class="tour-action-row">
+        <div class="tour-action-pill" id="tour-step-action">Full factory overview</div>
+        <div class="tour-controls-hint">Space: Next • Backspace: Prev • Esc: Skip</div>
+      </div>
+      <div class="tour-progress-bg">
+        <div id="tour-step-progress" class="tour-progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- TOUR END CARD -->
+    <div id="tour-end-card" class="tour-card" style="display:none;">
+      <h2 class="tour-title">TOUR COMPLETE</h2>
+      <p class="tour-text">You now have the keys to the factory. Press X anytime to fire an interrupt.</p>
+      <button id="tour-finish-btn" class="tour-btn tour-btn-primary">[ BEGIN FREE ROAM ]</button>
+    </div>
+
     <div id="progress-bar"></div>
     <div id="crosshair"></div>
     <div id="stage-panel">

@@ -19,6 +19,7 @@ import { initMemory } from './memory.js';
 import { initVip, tickVip }         from './vip.js';
 import { initArm, tickArm }           from './arm.js';
 import { initStage, tickStage, onIrqKey } from './stage.js';
+import { initTour, startTour, skipTour, isTourActive, tickTour } from './tour.js';
 
 /* ── Renderer ── */
 const canvas   = document.getElementById('c');
@@ -70,19 +71,36 @@ window.addEventListener('resize', () => {
   initIsrHandler(scene);
   initArm(scene, assets);
   initStage(scene);
+  initTour(camera, scene);
 
   // Enter button
   document.getElementById('enter-btn').addEventListener('click', () => {
     intro.style.opacity = '0';
     setTimeout(() => { intro.style.display = 'none'; }, 600);
     document.getElementById('hud').style.display = 'block';
-    lockPointer();
+
+    // Instead of immediately unlocking player, show tour start card
+    document.getElementById('tour-start-card').style.display = 'flex';
+  });
+
+  // Tour buttons
+  document.getElementById('tour-yes-btn').addEventListener('click', () => {
+    startTour();
+  });
+
+  document.getElementById('tour-no-btn').addEventListener('click', () => {
+    skipTour();
+    fadeHint();
+  });
+
+  document.getElementById('tour-finish-btn').addEventListener('click', () => {
+    skipTour();
     fadeHint();
   });
 
   // Canvas click re-locks pointer
   canvas.addEventListener('click', () => {
-    if (document.getElementById('hud').style.display === 'block') {
+    if (document.getElementById('hud').style.display === 'block' && !isTourActive()) {
       lockPointer();
     }
   });
@@ -107,7 +125,12 @@ window.addEventListener('resize', () => {
     const t  = clock.elapsedTime;
 
     // Player movement isn't affected by sim speed
-    tickPlayer(dt);
+    // If tour is active, player controls are functionally overridden by tour
+    if (!isTourActive()) {
+      tickPlayer(dt);
+    } else {
+      tickTour(dt, t);
+    }
 
     // Apply simulation speed to logic
     const simDt = dt * speedMultiplier;
