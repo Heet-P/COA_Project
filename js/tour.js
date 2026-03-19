@@ -232,6 +232,13 @@ export function tickTour(dt, t) {
     cameraArrived = true;
   }
 
+  // Always update progress based on the current step out of total steps
+  const pBar = document.getElementById('tour-step-progress');
+  if (pBar) {
+    const progress = (currentStep / (STEPS.length - 1)) * 100;
+    pBar.style.width = `${progress}%`;
+  }
+
   if (cameraArrived) {
     stepTimer += dt * 1000;
 
@@ -242,18 +249,5 @@ export function tickTour(dt, t) {
       setAlarm(true);
       irqFired = true;
     }
-
-    if (stepTimer >= step.hold) {
-      advanceTourStep();
-    }
-
-    // Update progress bar in UI
-    const progress = Math.min((stepTimer / step.hold) * 100, 100);
-    const pBar = document.getElementById('tour-step-progress');
-    if (pBar) pBar.style.width = `${progress}%`;
-  } else {
-    // Reset progress bar while moving
-    const pBar = document.getElementById('tour-step-progress');
-    if (pBar) pBar.style.width = '0%';
   }
 }
