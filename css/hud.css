@@ -446,6 +446,32 @@ canvas#c {
   color: #fff;
 }
 
+#tour-step-card {
+  width: 600px;
+  max-width: 90vw;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(13, 13, 13, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 2px #00F5FF;
+  border: none;
+  animation: popDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popDown {
+  from {
+    transform: translate(-50%, -100%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
 .tour-title {
   color: #FFE500;
   font-family: 'Space Grotesk', sans-serif;
